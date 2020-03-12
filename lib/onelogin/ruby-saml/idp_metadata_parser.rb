@@ -49,8 +49,8 @@ module OneLogin
       # @return [OneLogin::RubySaml::Settings]
       #
       # @raise [HttpError] Failure to fetch remote IdP metadata
-      def parse_remote(url, validate_cert = true, options = {})
-        idp_metadata = get_idp_metadata(url, validate_cert)
+      def parse_remote(url, validate_cert = true, options = {}, ssl_version = nil)
+        idp_metadata = get_idp_metadata(url, validate_cert, ssl_version)
         parse(idp_metadata, options)
       end
 
@@ -157,13 +157,14 @@ module OneLogin
       # @param validate_cert [Boolean] If true and the URL is HTTPs, the cert of the domain is checked.
       # @return [REXML::document] Parsed XML IdP metadata
       # @raise [HttpError] Failure to fetch remote IdP metadata
-      def get_idp_metadata(url, validate_cert)
+      def get_idp_metadata(url, validate_cert, ssl_version = nil)
         uri = URI.parse(url)
         raise ArgumentError.new("url must begin with http or https") unless /^https?/ =~ uri.scheme
         http = Net::HTTP.new(uri.host, uri.port)
 
         if uri.scheme == "https"
           http.use_ssl = true
+          http.ssl_version = ssl_version if ssl_version
           # Most IdPs will probably use self signed certs
           http.verify_mode = validate_cert ? OpenSSL::SSL::VERIFY_PEER : OpenSSL::SSL::VERIFY_NONE
 
